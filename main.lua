@@ -3,47 +3,71 @@
 -- main.lua
 --
 -----------------------------------------------------------------------------------------
-display.setStatusBar( display.HiddenStatusBar )
-display.setDefault( "background", 255, 255, 255 )
 
-opening = audio.loadStream( "opening.mp3" )
-audio.play( opening )
+function menu()
 
-frame = display.newImage( "frame.png" )
-frame.x = display.contentWidth/2 
-frame.y = display.contentHeight/2
+	display.setStatusBar( display.HiddenStatusBar )
+	display.setDefault( "background", 255, 255, 255 )
 
-banner = display.newImage( "banner.png" )
-banner.x = display.contentWidth/2
-banner.y = display.contentHeight/2 - 100
+	opening = audio.loadStream( "opening.mp3", {loop = 0} )
+	audio.play( opening )
 
-play = display.newImage( "play.png" )
-play.x = display.contentWidth/2
-play.y = display.contentHeight/2 - 25
+	frame = display.newImage( "frame.png" )
+	frame.x = display.contentWidth/2 
+	frame.y = display.contentHeight/2
 
-quit = display.newImage( "exit.png" )
-quit.x = display.contentWidth/2
-quit.y = display.contentHeight/2 + 15
+	banner = display.newImage( "banner.png" )
+	banner.x = display.contentWidth/2
+	banner.y = display.contentHeight/2 - 100
 
-name = display.newImage( "name.png" )
-name.x = display.contentWidth/2
-name.y = display.contentHeight
-name:scale(0.6, 0.6)
+	play = display.newImage( "play.png" )
+	play.x = display.contentWidth/2
+	play.y = display.contentHeight/2 - 25
+	play:addEventListener( "touch", load )
 
--- change these values if you wish
-pikachuTime = 800 -- 800 ms by default
-teamRocketProbability = 0.125 -- probability = 1 in 1/0.1 = 10% by default
-
-missed = false
+	function exitGame()
+		native.requestExit() -- only on Android
+		--os.exit() Not recommended
+	end
+		
+	quit = display.newImage( "exit.png" )
+	quit.x = display.contentWidth/2
+	quit.y = display.contentHeight/2 + 15
+	quit:addEventListener( "touch", exitGame )
+		
+	name = display.newImage( "name.png" )
+	name.x = display.contentWidth/2
+	name.y = display.contentHeight
+	name:scale(0.6, 0.6)
+	
+	menuGroup = display.newGroup()
+	menuGroup:insert( frame )
+	menuGroup:insert( banner )
+	menuGroup:insert( play )
+	menuGroup:insert( quit )
+	menuGroup:insert( name )
+	
+end
 
 function load()
 
+	-- stop opening audio
 	audio.stop()
-	frame:removeSelf()
-	play:removeSelf()
-	quit:removeSelf()
 	
-	bg = display.newImage( "beach.png" )
+	-- hide all menu elements
+	menuGroup.isVisible = false 
+	
+	bg = display.newImage( "beach.png" , true )
+	bg.x = display.contentWidth/2
+	bg.y = display.contentHeight/2
+	
+	-- timer text at the bottom, starts at 20
+	timerText = display.newText( "Round lasts 20 seconds", 0, 0, "Verdana", 20 )
+	timerText.x = display.contentWidth/2
+	timerText.y = display.contentHeight * 0.85
+	timerText:setTextColor( 0, 0, 0 )
+	
+	timerNum = 20
 	
 	-- load BGM
 	battle = audio.loadStream( "battle.mp3" )
@@ -138,6 +162,30 @@ function load()
 	teamRocket4:addEventListener( "touch", evil )
 	teamRocket4.isVisible = false
 	
+	-- make a group for all game elements, except HP bar and HP because they have complicated issues for switching and alignment
+	gameObjects = display.newGroup()
+	
+	gameObjects:insert( bg )
+	
+	gameObjects:insert( pokeball1 )
+	gameObjects:insert( pokeball2 )
+	gameObjects:insert( pokeball3 )
+	gameObjects:insert( pokeball4 )
+	
+	gameObjects:insert( pikachu1 )
+	gameObjects:insert( pikachu2 )
+	gameObjects:insert( pikachu3 )
+	gameObjects:insert( pikachu4 )
+		
+	gameObjects:insert( teamRocket1 )
+	gameObjects:insert( teamRocket2 )
+	gameObjects:insert( teamRocket3 )
+	gameObjects:insert( teamRocket4 )
+	
+	--gameObjects:insert( timerText )
+	timerText:toFront()
+	
+	
 	--[[
 	-- DEBUG ONLY --
 	-- Create buttons for adding and subtracting HP
@@ -157,6 +205,12 @@ function load()
 	plus:addEventListener( "touch", addHP )
 	]]--
 	
+	-- default values
+	-- change these values if you wish
+	pikachuTime = 500 -- 800 ms by default
+	teamRocketProbability = 0.15 -- probability = 1 in 1/0.1 = 10% by default
+	missed = false
+	
 	init()
 		
 end
@@ -166,10 +220,10 @@ function init()
 	scaleFactor = 3
 	
 	hp = display.newImage( "green.png" )
-	hp:scale( scaleFactor * 1.45, scaleFactor )
+	hp:scale( scaleFactor * 1.5, scaleFactor * 1.1)
 	
 	hp.x = display.contentWidth * 0.5 
-	hp.y = display.contentHeight * 0.2
+	hp.y = display.contentHeight * 0.2 
 	
 	fullHP = hp.width -- original width of the full bar, in this case 48 px
 	fullHPx = hp.x
@@ -189,7 +243,8 @@ function init()
 	t = 0
 	
 	changed = false -- value to make sure pikachu converts back into a pokeball
-	
+		
+	gameStartTime = system.getTimer()
 	
 	Runtime:addEventListener( "enterFrame", update)
 
@@ -358,7 +413,7 @@ function greenHP()
 	hpbar:toFront() -- cop out trick
 	
 	-- scale and place, restore attributes
-	hp:scale( scaleFactor, scaleFactor )
+	hp:scale( scaleFactor, scaleFactor * 1.1 )
 	hp.width = currentHP 
 	hp.x = currentHPx
 	hp.y = currentHPy	
@@ -366,31 +421,6 @@ function greenHP()
 	green = true
 	
 	restart = false
-	
-end
-
-function redHP()
-
-	-- we need to take the HP bar's attributes before we remove it
-	-- to sub back into the newly replaced HP bar
-	currentHP = hp.width
-	currentHPx = hp.x
-	
-	-- remove the yellow bar
-	hp:removeSelf() 
-		
-	-- load the new bar
-	hp = display.newImage( "red.png" )
-	hpbar:toFront() -- cop out trick
-	
-	-- scale and place, restore attributes
-	hp:scale( scaleFactor, scaleFactor )
-	hp.width = currentHP 
-	hp.x = currentHPx
-	hp.y = currentHPy
-	
-	
-	red = true
 	
 end
 
@@ -410,7 +440,7 @@ function yellowHP()
 	hpbar:toFront() -- cop out trick
 	
 	-- scale and place, restore attributes
-	hp:scale( scaleFactor, scaleFactor )
+	hp:scale( scaleFactor, scaleFactor * 1.1 )
 	hp.width = currentHP 
 	hp.x = currentHPx
 	hp.y = currentHPy
@@ -418,6 +448,31 @@ function yellowHP()
 	print ( hp.width, hp.x, hp.y )
 	
 	yellow = true
+	
+end
+
+function redHP()
+
+	-- we need to take the HP bar's attributes before we remove it
+	-- to sub back into the newly replaced HP bar
+	currentHP = hp.width
+	currentHPx = hp.x
+	
+	-- remove the yellow bar
+	hp:removeSelf() 
+		
+	-- load the new bar
+	hp = display.newImage( "red.png" )
+	hpbar:toFront() -- cop out trick
+	
+	-- scale and place, restore attributes
+	hp:scale( scaleFactor, scaleFactor * 1.1 )
+	hp.width = currentHP 
+	hp.x = currentHPx
+	hp.y = currentHPy
+	
+	
+	red = true
 	
 end
 
@@ -551,14 +606,61 @@ function changeBack4()
 end
 
 function gameOver()
-	print ( "You lose" )
-	hp:removeSelf()
-	init()
+	
+	
+	-- stop audio
+	audio.stop()
+	-- remove game objects from view
+	gameObjects.isVisible = false
+	-- stop the update thread listener
+	Runtime:removeEventListener( "enterFrame", update)
+	-- remove HP bars and HP (they're weird)
+	hpbar:removeSelf()
+	hp.isVisible = false
+	timerText:removeSelf()
+	
+	if hp.width <= 3 then
+		print ( "You lose" )
+		defeat = audio.loadStream( "defeat.mp3" )
+		audio.play( defeat )
+		scoreText = display.newText( "Game over", 0, 0, "Verdana", 50 )
+		scoreText.x = display.contentWidth/2
+		scoreText.y = display.contentHeight/2
+		scoreText:setTextColor( 0, 0, 0 )
+		scoreText:toFront()
+	else
+		victory = audio.loadStream( "victory.mp3" )
+		audio.play( victory )
+		scoreText = display.newText( "Score = ", 0, 0, "Verdana", 40 )
+		scoreText.x = display.contentWidth/2
+		scoreText.y = display.contentHeight/2
+		scoreText.text = "Score = "..hp.width
+		scoreText:setTextColor( 0, 0, 0 )
+		scoreText:toFront()
+	end
+	
+	function gameOverTransition()
+		audio.stop()
+		hp:removeSelf()
+		scoreText:removeSelf()
+		menu()
+	end
+	
+	scoreText:addEventListener( "touch", gameOverTransition )
+	
 end
 
 function update()
 	
-	if( system.getTimer() > 4500 ) then
+	if( system.getTimer() - gameStartTime > 3500 ) then	timerText.text = "1"
+	elseif( system.getTimer() - gameStartTime > 2500 ) then	timerText.text = "2" 
+	elseif( system.getTimer() - gameStartTime > 1500 ) then	timerText.text = "3" 
+	elseif( system.getTimer() - gameStartTime > 1000 ) then	
+		timerText.size = 50
+		timerText.text = "Ready?" 
+	end
+	
+	if( system.getTimer() - gameStartTime > 4500 ) then
 			
 		if system.getTimer() % math.random(65, 75) == 0 then 
 		
@@ -597,7 +699,14 @@ function update()
 				changed = false
 			end
 		end
-				
+		
+		-- deduct from timer
+		timerNum = 20 - math.round( ( system.getTimer() - gameStartTime - 4500 ) / 1000 )
+		--timerText.text( timerNum )
+		timerText.text = timerNum
+		
+		if( timerNum < 15 ) then gameOver() end
+						
 	end
 		
 	--print (math.randomseed( t + 100 ))
@@ -605,5 +714,6 @@ function update()
 	
 end
 
-play:addEventListener( "touch", load )
+
+menu()
 
