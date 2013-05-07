@@ -4,22 +4,46 @@
 --
 -----------------------------------------------------------------------------------------
 display.setStatusBar( display.HiddenStatusBar )
+display.setDefault( "background", 255, 255, 255 )
 
-ready = display.newText("Ready?", 0, 0, "Verdana", 50)
-ready.x = display.contentWidth/2
-ready.y = display.contentHeight/2
+opening = audio.loadStream( "opening.mp3" )
+audio.play( opening )
+
+frame = display.newImage( "frame.png" )
+frame.x = display.contentWidth/2 
+frame.y = display.contentHeight/2
+
+banner = display.newImage( "banner.png" )
+banner.x = display.contentWidth/2
+banner.y = display.contentHeight/2 - 100
+
+play = display.newImage( "play.png" )
+play.x = display.contentWidth/2
+play.y = display.contentHeight/2 - 25
+
+quit = display.newImage( "exit.png" )
+quit.x = display.contentWidth/2
+quit.y = display.contentHeight/2 + 15
+
+name = display.newImage( "name.png" )
+name.x = display.contentWidth/2
+name.y = display.contentHeight
+name:scale(0.6, 0.6)
 
 -- change these values if you wish
 pikachuTime = 800 -- 800 ms by default
-teamRocketProbability = 0.1 -- probability = 1 in 1/0.1 = 10% by default
+teamRocketProbability = 0.125 -- probability = 1 in 1/0.1 = 10% by default
 
 missed = false
 
 function load()
 
-	ready:removeSelf()
+	audio.stop()
+	frame:removeSelf()
+	play:removeSelf()
+	quit:removeSelf()
 	
-	bg = display.newImage( "bg.png" )
+	bg = display.newImage( "beach.png" )
 	
 	-- load BGM
 	battle = audio.loadStream( "battle.mp3" )
@@ -534,7 +558,7 @@ end
 
 function update()
 	
-	if( system.getTimer() > 3000 ) then
+	if( system.getTimer() > 4500 ) then
 			
 		if system.getTimer() % math.random(65, 75) == 0 then 
 		
@@ -581,5 +605,5 @@ function update()
 	
 end
 
-ready:addEventListener( "touch", load )
+play:addEventListener( "touch", load )
 
