@@ -207,8 +207,8 @@ function load()
 	
 	-- default values
 	-- change these values if you wish
-	pikachuTime = 350 -- this is the reaction speed variable
-	teamRocketProbability = 0.33 -- 33% of a Team Rocket
+	pikachuTime = 500 -- 800 ms by default
+	teamRocketProbability = 0.15 -- probability = 1 in 1/0.1 = 10% by default
 	missed = false
 	
 	init()
@@ -220,7 +220,7 @@ function init()
 	scaleFactor = 3
 	
 	hp = display.newImage( "green.png" )
-	hp:scale( scaleFactor * 1.5, scaleFactor * 1.2 ) 
+	hp:scale( scaleFactor * 1.5, scaleFactor * 1.1)
 	
 	hp.x = display.contentWidth * 0.5 
 	hp.y = display.contentHeight * 0.2 
@@ -413,7 +413,7 @@ function greenHP()
 	hpbar:toFront() -- cop out trick
 	
 	-- scale and place, restore attributes
-	hp:scale( scaleFactor, scaleFactor * 1.2 )
+	hp:scale( scaleFactor, scaleFactor * 1.1 )
 	hp.width = currentHP 
 	hp.x = currentHPx
 	hp.y = currentHPy	
@@ -440,7 +440,7 @@ function yellowHP()
 	hpbar:toFront() -- cop out trick
 	
 	-- scale and place, restore attributes
-	hp:scale( scaleFactor, scaleFactor * 1.2 )
+	hp:scale( scaleFactor, scaleFactor * 1.1 )
 	hp.width = currentHP 
 	hp.x = currentHPx
 	hp.y = currentHPy
@@ -466,7 +466,7 @@ function redHP()
 	hpbar:toFront() -- cop out trick
 	
 	-- scale and place, restore attributes
-	hp:scale( scaleFactor, scaleFactor * 1.2 )
+	hp:scale( scaleFactor, scaleFactor * 1.1 )
 	hp.width = currentHP 
 	hp.x = currentHPx
 	hp.y = currentHPy
@@ -657,10 +657,9 @@ function update()
 		-- this works and makes you instantly lose
 		-- change1()
 		
-		if math.random(1,40) == 1 then 
+		if system.getTimer() % math.random(65, 75) == 0 then 
 				
 			-- this code is never triggering on Android
-			
 			if changed == false then 
 				currentTime = system.getTimer()
 				change1() 
@@ -668,7 +667,7 @@ function update()
 				if system.getTimer() - currentTime > 800 then	changed = false end
 			end
 			
-		elseif math.random(1,40) == 2 then  
+		elseif system.getTimer() % math.random(65, 75) == 0 then  
 		
 			if changed == false then 
 				currentTime = system.getTimer()
@@ -677,7 +676,7 @@ function update()
 				if system.getTimer() - currentTime > 800 then	changed = false end
 			end
 			
-		elseif math.random(1,40) == 3 then 
+		elseif system.getTimer() % math.random(65, 75) == 0 then 
 		
 			if changed == false then 
 				currentTime = system.getTimer()
@@ -686,7 +685,7 @@ function update()
 				if system.getTimer() - currentTime > 800 then	changed = false end
 			end
 			
-		elseif math.random(1,40) == 4 then
+		elseif system.getTimer() % math.random(65, 75) == 0 then
 		
 			if changed == false then 
 				currentTime = system.getTimer()

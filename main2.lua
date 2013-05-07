@@ -207,8 +207,8 @@ function load()
 	
 	-- default values
 	-- change these values if you wish
-	pikachuTime = 350 -- this is the reaction speed variable
-	teamRocketProbability = 0.33 -- 33% of a Team Rocket
+	pikachuTime = 500 -- 800 ms by default
+	teamRocketProbability = 0.2 -- probability = 1 in 1/0.1 = 10% by default
 	missed = false
 	
 	init()
@@ -220,7 +220,7 @@ function init()
 	scaleFactor = 3
 	
 	hp = display.newImage( "green.png" )
-	hp:scale( scaleFactor * 1.5, scaleFactor * 1.2 ) 
+	hp:scale( scaleFactor * 1.5, scaleFactor * 1.1)
 	
 	hp.x = display.contentWidth * 0.5 
 	hp.y = display.contentHeight * 0.2 
@@ -413,7 +413,7 @@ function greenHP()
 	hpbar:toFront() -- cop out trick
 	
 	-- scale and place, restore attributes
-	hp:scale( scaleFactor, scaleFactor * 1.2 )
+	hp:scale( scaleFactor, scaleFactor * 1.1 )
 	hp.width = currentHP 
 	hp.x = currentHPx
 	hp.y = currentHPy	
@@ -440,7 +440,7 @@ function yellowHP()
 	hpbar:toFront() -- cop out trick
 	
 	-- scale and place, restore attributes
-	hp:scale( scaleFactor, scaleFactor * 1.2 )
+	hp:scale( scaleFactor, scaleFactor * 1.1 )
 	hp.width = currentHP 
 	hp.x = currentHPx
 	hp.y = currentHPy
@@ -466,7 +466,7 @@ function redHP()
 	hpbar:toFront() -- cop out trick
 	
 	-- scale and place, restore attributes
-	hp:scale( scaleFactor, scaleFactor * 1.2 )
+	hp:scale( scaleFactor, scaleFactor * 1.1 )
 	hp.width = currentHP 
 	hp.x = currentHPx
 	hp.y = currentHPy
@@ -616,7 +616,7 @@ function gameOver()
 	Runtime:removeEventListener( "enterFrame", update)
 	-- remove HP bars and HP (they're weird)
 	hpbar:removeSelf()
-	hp.isVisible = false
+	hp:toBack()
 	timerText:removeSelf()
 	
 	if hp.width <= 3 then
