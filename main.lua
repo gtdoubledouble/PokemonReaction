@@ -207,9 +207,10 @@ function load()
 	
 	-- default values
 	-- change these values if you wish
-	pikachuTime = 350 -- this is the reaction speed variable
+	pikachuTime = 500 -- this is the reaction speed variable. 400 is a bit hard
 	teamRocketProbability = 0.33 -- 33% of a Team Rocket
 	missed = false
+	missedCounter = 1
 	
 	init()
 		
@@ -220,7 +221,7 @@ function init()
 	scaleFactor = 3
 	
 	hp = display.newImage( "green.png" )
-	hp:scale( scaleFactor * 1.5, scaleFactor * 1.2 ) 
+	hp:scale( scaleFactor * 1.4, scaleFactor * 1.2 ) 
 	
 	hp.x = display.contentWidth * 0.5 
 	hp.y = display.contentHeight * 0.2 
@@ -260,41 +261,46 @@ restart = false
 function addHP( event )
 
 	if event.phase == "began" then
-	
-		missed = false
-		print ( missed )
 		
-		-- play pokeball sound to indicate pokeball was tapped
-		audio.play( pikachuSound )
+		if( system.getTimer() - gameStartTime > 4500 ) then
 		
-		-- addHP is a bit different from subHP
-		-- if we surpass fullHP, we don't want to exceed the maximum, so we instantly adjust
+			missed = false
+			missedCounter = 1 -- penalty counter is reset
+			print ( missed )
+			
+			-- play pokeball sound to indicate pokeball was tapped
+			audio.play( pikachuSound )
+			
+			-- addHP is a bit different from subHP
+			-- if we surpass fullHP, we don't want to exceed the maximum, so we instantly adjust
+			
+			hp.width = hp.width + widthChange
+			hp.x = hp.x + xChange
+			
+			if hp.width + widthChange >= fullHP then
+				diff = fullHP - hp.width
+				hp.width = fullHP -- we set width of HP bar to be full HP
+				hp.x = hp.x + diff * scaleFactor/2 -- but we need to manually adjust hp's x value based on the difference that was adjusted
+					
+			elseif hp.width > fullHP * 0.55 then
+				-- change back to green if it was yellow
+				if yellow == true then
+					greenHP()
+					yellow = false
+					red = false
+				end
+			
+			elseif hp.width > fullHP * 0.3 then
+				-- change to yellow if it was red
+				if red == true then
+					yellowHP()
+					red = false
+					green = false
+				end
+			
+			end	
 		
-		hp.width = hp.width + widthChange
-		hp.x = hp.x + xChange
-		
-		if hp.width + widthChange >= fullHP then
-			diff = fullHP - hp.width
-			hp.width = fullHP -- we set width of HP bar to be full HP
-			hp.x = hp.x + diff * scaleFactor/2 -- but we need to manually adjust hp's x value based on the difference that was adjusted
-				
-		elseif hp.width > fullHP * 0.55 then
-			-- change back to green if it was yellow
-			if yellow == true then
-				greenHP()
-				yellow = false
-				red = false
-			end
-		
-		elseif hp.width > fullHP * 0.3 then
-			-- change to yellow if it was red
-			if red == true then
-				yellowHP()
-				red = false
-				green = false
-			end
-		
-		end			
+		end
 			
 		return true
 		
@@ -307,29 +313,34 @@ function subHP( event )
 
 	if event.phase == "began" then
 	
-		-- play pokeball sound to indicate pokeball was tapped
-		audio.play( pokeballSound )
-	
-		if( hp.width - widthChange <= 2 ) then
-			gameOver()		
-		else	
-			hp.width = hp.width - widthChange
-			hp.x = hp.x - xChange
-			print (" HP is "..hp.width)
-			-- below 30% HP, HP bar turns yellow
-			-- below 10% HP, HP bar turns red
-			-- we must give the red condition priority, or else yellow will trigger by default
+		if( system.getTimer() - gameStartTime > 4500 ) then
+				
+			-- play pokeball sound to indicate pokeball was tapped
+			audio.play( pokeballSound )
+		
+			if( hp.width - widthChange <= 2 ) then
+				gameOver()		
+			else	
+				hp.width = hp.width - widthChange
+				hp.x = hp.x - xChange
+				print (" HP is "..hp.width)
+				-- below 30% HP, HP bar turns yellow
+				-- below 10% HP, HP bar turns red
+				-- we must give the red condition priority, or else yellow will trigger by default
+				
+				if hp.width < fullHP * 0.3 then
+					redHP()
+				elseif hp.width < fullHP * 0.55 then
+					print ( hp.width, hp.x, hp.y )
+					yellowHP()
+				end
 			
-			if hp.width < fullHP * 0.3 then
-				redHP()
-			elseif hp.width < fullHP * 0.55 then
-				print ( hp.width, hp.x, hp.y )
-				yellowHP()
 			end
 		
 		end
 		
 		return true
+		
 	else
 		return false
 	end
@@ -340,11 +351,11 @@ function missedPenalty()
 	-- play pokeball sound to indicate pokeball was tapped
 	audio.play( pokeballSound )
 	
-	if( hp.width - widthChange <= 2 ) then
+	if( hp.width - ( widthChange * missedCounter ) <= 2 ) then
 		gameOver()		
 	else	
-		hp.width = hp.width - widthChange
-		hp.x = hp.x - xChange
+		hp.width = hp.width - ( widthChange * missedCounter )
+		hp.x = hp.x - ( xChange * missedCounter )
 		print (" HP is "..hp.width)
 		-- below 30% HP, HP bar turns yellow
 		-- below 10% HP, HP bar turns red
@@ -360,11 +371,15 @@ function missedPenalty()
 	end
 	
 	missed = false
+	missedCounter = missedCounter + 1
 	
 end
 
 function evil( event )
+
 	if event.phase == "began" then
+		
+		missedCounter = 1 -- penalty counter is reset (even for tapping the wrong thing)
 		
 		-- play koffing sound to indicate Team Rocket was tapped
 		audio.play( koffingSound )
@@ -606,8 +621,7 @@ function changeBack4()
 end
 
 function gameOver()
-	
-	
+		
 	-- stop audio
 	audio.stop()
 	-- remove game objects from view
@@ -615,9 +629,9 @@ function gameOver()
 	-- stop the update thread listener
 	Runtime:removeEventListener( "enterFrame", update)
 	-- remove HP bars and HP (they're weird)
-	hpbar:removeSelf()
+	hpbar.isVisible = false
 	hp.isVisible = false
-	timerText:removeSelf()
+	timerText.text = ""
 	
 	if hp.width <= 3 then
 		print ( "You lose" )
@@ -642,6 +656,7 @@ function gameOver()
 	function gameOverTransition()
 		audio.stop()
 		hp:removeSelf()
+		hpbar:removeSelf()
 		scoreText:removeSelf()
 		menu()
 	end
